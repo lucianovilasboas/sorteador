@@ -1,0 +1,20 @@
+{
+  "name": "sorteador",
+  "version": "1.0.0",
+  "description": "Sala de sorteio por voz - sorteia numeros sem repetir, com historico em JSON",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "https": "HTTPS=1 node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "selfsigned": "^2.4.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

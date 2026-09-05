@@ -1,0 +1,29 @@
+# ============================================================
+# DEFINITIVO — para o servidor, atrás do proxy reverso Traefik.
+# Sem HTTPS próprio (certificado via Traefik, rede externa "proxy").
+#
+#   docker compose up -d --build
+#   domínio: https://sorteador.lucianovilasboas.com.br
+# ============================================================
+services:
+  sorteador:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TZ=America/Sao_Paulo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sorteador.rule=Host(`sorteador.lucianovilasboas.com.br`)"
+      - "traefik.http.routers.sorteador.entrypoints=websecure"
+      - "traefik.http.routers.sorteador.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sorteador.loadbalancer.server.port=3000"
+
+networks:
+  proxy:
+    external: true

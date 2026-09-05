@@ -1,0 +1,33 @@
+# ============================================================
+# DEV LOCAL (sem Traefik) — use o definitivo (docker-compose.yml)
+# no servidor, atrás do proxy reverso.
+#
+#   docker compose -f docker-compose.local.yml up -d
+#   docker compose -f docker-compose.local.yml --profile https up -d
+# ============================================================
+services:
+  sorteador:
+    build: .
+    container_name: sorteador
+    restart: unless-stopped
+    # Rede bridge padrão: o pool de redes do daemon do mint-xps está esgotado,
+    # então o compose não consegue criar redes customizadas ("fully subnetted").
+    network_mode: bridge
+    ports:
+      - "3200:3000"
+    volumes:
+      - ./data:/app/data
+
+  # Acesso por voz em rede local (celular/TV) exige HTTPS.
+  sorteador-https:
+    build: .
+    container_name: sorteador-https
+    restart: unless-stopped
+    profiles: ["https"]
+    network_mode: bridge
+    environment:
+      - HTTPS=1
+    ports:
+      - "3443:3000"
+    volumes:
+      - ./data:/app/data

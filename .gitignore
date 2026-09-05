@@ -1,0 +1,23 @@
+# dependências
+node_modules/
+
+# runtime / persistência local (não versionar sorteios.json nem certs)
+data/
+
+# logs / debug
+*.log
+npm-debug.log*
+
+# segredos
+.env
+.env.*
+!.env.example
+
+# sistema / editor
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# artefatos de teste / capturas
+*.png
+.playwright-mcp/

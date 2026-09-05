@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0a1a" />
+  <title>Sala de Sorteio</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B1%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <div class="glow-bg" aria-hidden="true"></div>
+
+  <div class="page">
+    <!-- ======================= CONTROLE (principal) ======================= -->
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-badge" aria-hidden="true">🎱</span>
+          <div class="brand-text">
+            <h1>Sala de Sorteio</h1>
+            <p class="tagline">Comando de voz ao vivo</p>
+          </div>
+        </div>
+        <div class="status-pill" id="micPill" data-state="off">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="micPillText">Microfone desligado</span>
+        </div>
+      </header>
+
+      <!-- Configuração do intervalo: recolhida no mobile, aberta no desktop -->
+      <section class="config" id="configZone">
+        <button class="config-toggle" id="configToggle" type="button" aria-expanded="false" aria-controls="configBody">
+          <span class="cfg-gear" aria-hidden="true">⚙️</span>
+          <span class="cfg-text">Intervalo de números</span>
+          <span class="cfg-brief" id="rangeBrief">1 – 20</span>
+          <span class="chev" aria-hidden="true"></span>
+        </button>
+        <div class="config-body" id="configBody">
+          <div class="interval-row">
+            <label class="visually-hidden" for="rangeMin">Mínimo</label>
+            <input id="rangeMin" type="number" min="1" value="1" aria-label="Mínimo" />
+            <span class="range-sep">até</span>
+            <label class="visually-hidden" for="rangeMax">Máximo</label>
+            <input id="rangeMax" type="number" min="2" value="20" aria-label="Máximo" />
+            <button class="btn btn-ghost" id="applyRange" type="button">Aplicar</button>
+          </div>
+
+          <div class="voice-row">
+            <label class="voice-label" for="voiceSelect">🗣️ Voz do sorteio</label>
+            <select id="voiceSelect" aria-label="Voz do sorteio"></select>
+            <button class="btn btn-ghost voice-test" id="voiceTest" type="button">▶ Ouvir</button>
+          </div>
+          <p class="voice-note" id="voiceNote" hidden></p>
+        </div>
+      </section>
+
+      <!-- Palco: roda concêntrica + número no centro exato -->
+      <main class="stage-zone" aria-label="Palco do sorteio">
+        <div class="wheel" id="wheel" aria-hidden="true">
+          <div class="wheel-disc"></div>
+          <div class="wheel-rings"></div>
+          <div class="wheel-orbs"></div>
+        </div>
+
+        <div class="number-wrap">
+          <div class="number-label" id="numberLabel">Pronto para sortear</div>
+          <div class="number-big" id="numberBig" role="status" aria-live="assertive">&nbsp;</div>
+        </div>
+      </main>
+
+      <!-- Rodapé de controle -->
+      <footer class="dock">
+        <div class="progress" aria-hidden="true">
+          <div class="progress-head">
+            <span id="progressLabel">0 de 0 sorteados</span>
+            <span id="progressPct">0%</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-mic act-side" id="micBtn" aria-pressed="false" title="Comandos por voz">
+            <span class="mic-icon" aria-hidden="true">🎤</span>
+            <span id="micBtnText">Mic</span>
+          </button>
+          <button class="btn btn-primary btn-big" id="drawBtn">
+            <span class="btn-icon" aria-hidden="true">🎰</span> Sortear
+          </button>
+          <button class="btn btn-danger act-side" id="resetBtn" title="Reiniciar rodada">
+            <span class="btn-icon" aria-hidden="true">🔄</span>
+            <span id="resetBtnText">Reiniciar</span>
+          </button>
+        </div>
+
+        <p class="last-note" id="lastNote" aria-live="polite"></p>
+      </footer>
+    </div>
+
+    <!-- ======================= HISTÓRICO (drawer no mobile / coluna no desktop) ======================= -->
+    <aside class="history" id="historyZone" aria-label="Histórico e dados dos sorteios">
+      <button class="history-toggle" id="historyToggle" type="button" aria-expanded="false" aria-controls="historyBody">
+        <span class="h-icon" aria-hidden="true">🗂️</span>
+        <span class="h-title">Histórico &amp; dados</span>
+        <span class="h-badges" aria-hidden="true">
+          <span class="pillb" id="histDrawnPill">0 sorteados</span>
+          <span class="pillb" id="histRemainPill">0 restantes</span>
+        </span>
+        <span class="chev" aria-hidden="true"></span>
+      </button>
+
+      <div class="history-body" id="historyBody">
+        <section class="panel" id="drawnPanel" aria-label="Sorteados nesta rodada">
+          <h2>Sorteados nesta rodada <span class="count" id="drawnCount">0</span></h2>
+          <div class="chips drawn" id="drawnRow"></div>
+        </section>
+
+        <section class="panel" id="remainingPanel" aria-label="Números restantes">
+          <h2>Números restantes <span class="count" id="remainingCount">0</span></h2>
+          <div class="chips remaining" id="remainingGrid"></div>
+          <div class="empty-note" id="remainingEmpty" hidden>Rodada completa! Diga <strong>reiniciar</strong> para uma nova.</div>
+        </section>
+
+        <section class="panel" id="roundsPanel" aria-label="Rodadas anteriores">
+          <h2>Rodadas anteriores</h2>
+          <div id="roundsList"></div>
+        </section>
+
+        <p class="voice-hint" aria-label="Comandos de voz">
+          🎤 <strong>Diga:</strong> “Sortear” / “Próximo” sorteia · “Reiniciar” / “Zerar” inicia nova rodada
+        </p>
+      </div>
+    </aside>
+
+    <div class="sheet-backdrop" id="sheetBackdrop" aria-hidden="true"></div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
