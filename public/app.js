@@ -16,9 +16,6 @@ const els = {
   voiceSelect: $("voiceSelect"),
   voiceTest: $("voiceTest"),
   voiceNote: $("voiceNote"),
-  exportBtn: $("exportBtn"),
-  importBtn: $("importBtn"),
-  importInput: $("importInput"),
   configToggle: $("configToggle"),
   configZone: $("configZone"),
   configBody: $("configBody"),
@@ -741,8 +738,8 @@ if (!supported) {
   setNote("Para comandos por voz use Chrome ou Edge com microfone.");
 }
 
-/* ---------------- exportar / importar histórico ---------------- */
-els.exportBtn.addEventListener("click", () => {
+/* ---------------- backup do histórico (atalhos, sem UI) ---------------- */
+function exportHistory() {
   const blob = new Blob([store.exportState()], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -751,32 +748,46 @@ els.exportBtn.addEventListener("click", () => {
   a.click();
   URL.revokeObjectURL(url);
   setNote("Histórico exportado.");
-});
+}
 
-els.importBtn.addEventListener("click", () => {
+function importHistory() {
   if (busy) {
     showToast("Aguarde o sorteio terminar para importar.", true);
     return;
   }
-  els.importInput.click();
-});
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.addEventListener("change", async () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (!confirm("Importar substitui a rodada atual e todo o histórico. Continuar?")) return;
+    try {
+      const s = store.importState(await file.text());
+      els.rangeMin.value = s.range.min;
+      els.rangeMax.value = s.range.max;
+      renderState(s);
+      setIdleNumber();
+      els.wheel.classList.remove("boiling");
+      els.numberLabel.textContent = "Pronto para sortear";
+      setNote("Histórico importado.");
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  });
+  input.click();
+}
 
-els.importInput.addEventListener("change", async () => {
-  const file = els.importInput.files && els.importInput.files[0];
-  els.importInput.value = "";
-  if (!file) return;
-  if (!confirm("Importar substitui a rodada atual e todo o histórico. Continuar?")) return;
-  try {
-    const s = store.importState(await file.text());
-    els.rangeMin.value = s.range.min;
-    els.rangeMax.value = s.range.max;
-    renderState(s);
-    setIdleNumber();
-    els.wheel.classList.remove("boiling");
-    els.numberLabel.textContent = "Pronto para sortear";
-    setNote("Histórico importado.");
-  } catch (err) {
-    showToast(err.message, true);
+window.addEventListener("keydown", (e) => {
+  // Ctrl+Alt (e não Ctrl+Shift): Ctrl+Shift+I é DevTools do Chrome e nunca chega à página.
+  if (!e.ctrlKey || !e.altKey || e.shiftKey || e.metaKey) return;
+  const key = e.key.toLowerCase();
+  if (key === "e") {
+    e.preventDefault();
+    exportHistory();
+  } else if (key === "i") {
+    e.preventDefault();
+    importHistory();
   }
 });
 

@@ -249,14 +249,6 @@ body {
 #voiceSelect:focus { border-color: var(--gold); }
 #voiceSelect option { background: #1a1638; color: var(--text); }
 .voice-test { padding: 8px 12px; font-size: 0.82rem; flex: 0 0 auto; }
-.data-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
 .voice-note {
   margin: 0;
   font-size: 0.78rem;

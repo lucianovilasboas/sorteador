@@ -73,13 +73,13 @@ auto-assinados do modo HTTPS — o estado dos sorteios **não** fica no servidor
 3. Diga **“sortear”** e veja o globo girar e o número ser revelado e anunciado.
 4. Ao esgotar, diga **“reiniciar”** duas vezes (confirmação) para uma nova rodada.
 
-## Histórico: exportar e importar
+## Histórico: backup
 
-Como os dados moram no navegador, limpar os dados do site apaga o histórico. Em
-**⚙️ Intervalo de números** ficam os botões:
+Como os dados moram no navegador, limpar os dados do site apaga o histórico. Há dois
+atalhos (sem nenhum botão na tela):
 
-- **⬇ Exportar** — baixa um `sorteios-AAAA-MM-DD.json` com o estado completo.
-- **⬆ Importar** — lê esse arquivo e substitui a rodada atual e o histórico.
+- **`Ctrl+Alt+E`** — baixa um `sorteios-AAAA-MM-DD.json` com o estado completo.
+- **`Ctrl+Alt+I`** — lê esse arquivo e substitui a rodada atual e o histórico.
 
 Use isso para backup, para levar o histórico para outra máquina ou para trocar de
 navegador.
@@ -121,6 +121,6 @@ sorteador/
   o número ainda aparece grande na tela.
 - **O estado é por navegador e por origem.** Outro dispositivo, outro navegador ou outra
   porta/domínio começam do zero; não há sorteio compartilhado entre telas. Para preservar
-  o histórico, use **Exportar**.
+  o histórico, use **`Ctrl+Alt+E`** para exportar.
 - `localStorage` é isolado por origem: `http://localhost:3200` e
   `https://sorteador.lucianovilasboas.com.br` são históricos diferentes.
