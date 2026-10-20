@@ -9,6 +9,9 @@ esgota você reinicia falando.
 
 - **Voz para ouvir** (`reconhecer`): API de fala do navegador (Chrome/Edge) com `pt-BR`.
 - **Voz para falar** (`anunciar`): síntese de fala do navegador com voz `pt-BR`.
+- **Silenciar**: o botão `🔊` ao lado do indicador do microfone desliga **só a voz de
+  saída** — o número continua sendo sorteado e aparece na tela. O estado fica salvo no
+  navegador (`sorteador.muted`).
 - **Single Page Application**: o app roda inteiro no navegador. **Não há backend de dados
   nem API** — o servidor Node só entrega os arquivos estáticos.
 - **Gravação**: `localStorage` do navegador, chave `sorteador.state.v1` (intervalo, rodada
@@ -94,6 +97,8 @@ navegador.
   de ~4 MB, as rodadas mais antigas são descartadas; se o navegador recusar a gravação,
   o app avisa em vez de perder o sorteio em silêncio.
 - Abrir o app em duas abas mantém as duas sincronizadas (evento `storage`).
+- No celular a tela ocupa exatamente a altura do aparelho (sem rolagem vertical); o
+  histórico rola dentro do próprio painel.
 - Testes do domínio: `npm test` (Node ≥ 18, sem dependências).
 
 ### Estrutura

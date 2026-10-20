@@ -23,9 +23,21 @@
             <p class="tagline">Comando de voz ao vivo</p>
           </div>
         </div>
-        <div class="status-pill" id="micPill" data-state="off">
-          <span class="dot" aria-hidden="true"></span>
-          <span id="micPillText">Microfone desligado</span>
+        <div class="topbar-actions">
+          <div class="status-pill" id="micPill" data-state="off">
+            <span class="dot" aria-hidden="true"></span>
+            <span id="micPillText">Mic desligado</span>
+          </div>
+          <button
+            class="mute-btn"
+            id="muteBtn"
+            type="button"
+            aria-pressed="false"
+            aria-label="Silenciar a voz do sorteio"
+            title="Silenciar a voz do sorteio"
+          >
+            <span id="muteIcon" aria-hidden="true">🔊</span>
+          </button>
         </div>
       </header>
 

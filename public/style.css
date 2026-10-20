@@ -125,7 +125,13 @@ body {
   color: var(--text-dim);
   white-space: nowrap;
   flex: 0 0 auto;
+  min-width: 0;
   transition: border-color 0.3s, color 0.3s, box-shadow 0.3s;
+}
+#micPillText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .status-pill .dot {
   width: 8px; height: 8px; border-radius: 50%;
@@ -141,6 +147,39 @@ body {
 .status-pill[data-state="listening"] #micPillText { color: var(--green); }
 .status-pill[data-state="error"] { color: #ffd7d7; border-color: rgba(248, 113, 113, 0.6); }
 .status-pill[data-state="error"] .dot { background: var(--red); }
+
+/* indicador do microfone + botão de silenciar a voz */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.mute-btn {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: var(--card);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
+}
+.mute-btn:hover { border-color: rgba(255, 255, 255, 0.22); }
+.mute-btn[aria-pressed="true"] {
+  border-color: rgba(255, 197, 77, 0.55);
+  background: rgba(255, 197, 77, 0.14);
+  color: var(--gold);
+}
 
 /* ===================== configuração (recolhível) ===================== */
 .config {
@@ -277,7 +316,7 @@ body {
   transform: translate(-50%, -50%);
   /* nunca maior que o palco: em tela curta ela encolhe em vez de invadir o rodapé */
   width: auto;
-  height: min(86vw, 62vh, 620px, calc(100% - 8px));
+  height: min(78vw, 62vh, 620px, calc(100% - 8px));
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   pointer-events: none;
@@ -716,11 +755,25 @@ body {
 
 /* mobile muito estreito: ajusta roda e controles */
 @media (max-height: 640px) and (max-width: 899px) {
-  .wheel { width: min(78vw, 58vh); height: min(78vw, 58vh); }
+  .wheel { width: auto; height: min(78vw, 58vh, calc(100% - 8px)); }
   .number-big { font-size: clamp(3.4rem, 24vh, 8rem); }
   .brand h1 { font-size: 1rem; }
   .status-pill { display: none; }
   .tagline { display: none; }
+}
+
+/* ============================================================
+   MOBILE — uma tela só: o documento nunca rola na vertical
+   ============================================================ */
+@media (max-width: 899px) {
+  html, body { height: 100%; overflow: hidden; }
+  .page { height: 100%; min-height: 0; }
+  .app { height: 100%; min-height: 0; }
+}
+
+/* telas bem estreitas: sobra só o ponto de estado ao lado do botão de voz */
+@media (max-width: 359px) {
+  #micPillText { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

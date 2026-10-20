@@ -16,6 +16,8 @@ const els = {
   voiceSelect: $("voiceSelect"),
   voiceTest: $("voiceTest"),
   voiceNote: $("voiceNote"),
+  muteBtn: $("muteBtn"),
+  muteIcon: $("muteIcon"),
   configToggle: $("configToggle"),
   configZone: $("configZone"),
   configBody: $("configBody"),
@@ -128,6 +130,8 @@ function loopConfetti() {
 let voices = [];
 let recPaused = false;
 const VOICE_KEY = "sorteador.voice";      // localStorage: "auto" ou o nome da voz
+const MUTE_KEY = "sorteador.muted";       // localStorage: "1" quando a voz está silenciada
+let muted = localStorage.getItem(MUTE_KEY) === "1";
 
 const ROBOTIC = /espeak|pico|mbrola|festival|flite|sam\b|robot/i;   // motores que soam robô
 const FEMALE = /francisca|luciana|maria|helena|laura|julia|alice|camila|fernanda|paula|ana|raquel|female|woman|femini|vitoria|beatriz|sofia|giovanna/i;
@@ -213,7 +217,7 @@ function refreshVoiceList() {
 }
 
 function speak(text, then) {
-  if (!("speechSynthesis" in window)) {
+  if (!("speechSynthesis" in window) || muted) {
     if (then) then();
     return;
   }
@@ -235,6 +239,25 @@ function speak(text, then) {
   speechSynthesis.speak(u);
 }
 
+/* ---------------- silenciar a voz de saída ---------------- */
+function applyMuteUI() {
+  els.muteBtn.setAttribute("aria-pressed", String(muted));
+  els.muteIcon.textContent = muted ? "🔇" : "🔊";
+  const label = muted ? "Ativar a voz do sorteio" : "Silenciar a voz do sorteio";
+  els.muteBtn.setAttribute("aria-label", label);
+  els.muteBtn.title = label;
+}
+
+function setMuted(next) {
+  muted = next;
+  localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
+  if (muted && "speechSynthesis" in window) speechSynthesis.cancel();
+  applyMuteUI();
+  setNote(muted ? "Voz silenciada." : "Voz ativada.");
+}
+
+els.muteBtn.addEventListener("click", () => setMuted(!muted));
+
 /* ---------------- voz: reconhecimento ---------------- */
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 const supported = Boolean(SpeechRec);
@@ -248,7 +271,7 @@ function setMicUI(on, errText) {
   if (on) {
     els.micBtnText.textContent = "Desligar microfone";
     els.micPill.dataset.state = "listening";
-    els.micPillText.textContent = "Ouvindo comandos";
+    els.micPillText.textContent = "Ouvindo";
   } else {
     els.micBtnText.textContent = "Ativar microfone";
     if (errText) {
@@ -256,7 +279,7 @@ function setMicUI(on, errText) {
       els.micPillText.textContent = errText;
     } else {
       els.micPill.dataset.state = "off";
-      els.micPillText.textContent = "Microfone desligado";
+      els.micPillText.textContent = "Mic desligado";
     }
   }
 }
@@ -295,7 +318,7 @@ function startRecognition() {
     rec.onerror = (err) => {
       if (err.error === "not-allowed" || err.error === "service-not-allowed") {
         stopRecognition();
-        setMicUI(false, "Microfone bloqueado");
+        setMicUI(false, "Mic bloqueado");
         showToast("Permita o acesso ao microfone nas configurações do navegador.", true);
       }
       // erros de rede/"no-speech" apenas reiniciam pelo onend
@@ -321,7 +344,7 @@ async function toggleMic() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     stream.getTracks().forEach((t) => t.stop());
   } catch {
-    setMicUI(false, "Microfone bloqueado");
+    setMicUI(false, "Mic bloqueado");
     showToast("Não foi possível acessar o microfone. Libere a permissão e tente novamente.", true);
     return;
   }
@@ -714,6 +737,10 @@ els.voiceTest.addEventListener("click", () => {
     showToast("Seu navegador não suporta síntese de voz.", true);
     return;
   }
+  if (muted) {
+    showToast("Voz silenciada — toque no 🔇 para ativar.");
+    return;
+  }
   speak("Olá! Esta é a voz do sorteio. Pronta para anunciar os números.");
 });
 
@@ -800,6 +827,7 @@ window.addEventListener("storage", (e) => {
 
 /* ---------------- boot ---------------- */
 (function boot() {
+  applyMuteUI();
   try {
     const s = store.view();
     els.rangeMin.value = s.range.min;
