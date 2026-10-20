@@ -81,7 +81,8 @@ body {
   min-height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
-  padding: 0 14px calc(18px + env(safe-area-inset-bottom));
+  /* 48px = barra fixa do histórico no mobile: o dock nunca fica atrás dela */
+  padding: 0 14px calc(18px + 48px + env(safe-area-inset-bottom));
 }
 
 /* ===================== topbar ===================== */
@@ -274,8 +275,10 @@ body {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: min(86vw, 62vh, 620px);
-  height: min(86vw, 62vh, 620px);
+  /* nunca maior que o palco: em tela curta ela encolhe em vez de invadir o rodapé */
+  width: auto;
+  height: min(86vw, 62vh, 620px, calc(100% - 8px));
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   pointer-events: none;
 }
@@ -687,8 +690,7 @@ body {
   .config.open .config-body { display: flex; }
 
   .wheel {
-    width: min(56vh, 640px);
-    height: min(56vh, 640px);
+    height: min(56vh, 640px, calc(100% - 8px));
   }
 
   /* histórico como coluna lateral */
