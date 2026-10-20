@@ -16,6 +16,9 @@ const els = {
   voiceSelect: $("voiceSelect"),
   voiceTest: $("voiceTest"),
   voiceNote: $("voiceNote"),
+  exportBtn: $("exportBtn"),
+  importBtn: $("importBtn"),
+  importInput: $("importInput"),
   configToggle: $("configToggle"),
   configZone: $("configZone"),
   configBody: $("configBody"),
@@ -50,6 +53,8 @@ const els = {
 };
 
 /* ---------------- estado ---------------- */
+const store = SorteioStore.createStore(window.localStorage);
+
 let state = null;
 let busy = false;
 let armed = false;
@@ -368,18 +373,6 @@ function handleVoice(raw) {
 }
 
 /* ---------------- ações ---------------- */
-async function api(path, opts) {
-  const res = await fetch(path, opts);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data.error || "Erro de conexão");
-    err.status = res.status;
-    err.data = data;
-    throw err;
-  }
-  return data;
-}
-
 let toastTimer = null;
 function showToast(msg, isError = false) {
   els.toast.textContent = msg;
@@ -476,7 +469,7 @@ function renderState(s, opts = {}) {
   // sorteados
   els.drawnCount.textContent = s.drawn.length;
   els.drawnPanel.hidden = s.drawn.length === 0;
-  const shownDrawn = s.drawn.slice(-CAP).map((d) => d.n);
+  const shownDrawn = s.drawn.slice(-CAP);
   const drawnNote = s.drawn.length > CAP ? `… e mais ${s.drawn.length - CAP} anteriores` : "";
   renderChipPanel(els.drawnRow, shownDrawn, "drawn", drawnEls, drawnNote);
 
@@ -544,7 +537,7 @@ async function doDraw() {
 
   let res;
   try {
-    res = await api("/api/draw", { method: "POST" });
+    res = store.draw();
   } catch (err) {
     clearInterval(spinner);
     els.wheel.classList.remove("boiling");
@@ -552,7 +545,7 @@ async function doDraw() {
     busy = false;
     els.drawBtn.classList.remove("busy");
     if (err.data?.exhausted) {
-      renderState(await api("/api/state"));
+      renderState(store.view());
       els.numberLabel.textContent = "Rodada completa";
     } else {
       showToast(err.message, true);
@@ -612,7 +605,7 @@ async function executeReset() {
   els.drawBtn.disabled = true;
   els.numberLabel.textContent = "Preparando nova rodada…";
   try {
-    const s = await api("/api/reset", { method: "POST" });
+    const s = store.reset();
     renderState(s);
     setIdleNumber();
     els.wheel.classList.remove("boiling");
@@ -641,11 +634,7 @@ async function applyRange() {
   }
   els.applyRange.disabled = true;
   try {
-    const s = await api("/api/config", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ min, max }),
-    });
+    const s = store.setRange(min, max);
     els.rangeMin.value = s.range.min;
     els.rangeMax.value = s.range.max;
     renderState(s);
@@ -752,10 +741,56 @@ if (!supported) {
   setNote("Para comandos por voz use Chrome ou Edge com microfone.");
 }
 
-/* ---------------- boot ---------------- */
-(async function boot() {
+/* ---------------- exportar / importar histórico ---------------- */
+els.exportBtn.addEventListener("click", () => {
+  const blob = new Blob([store.exportState()], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `sorteios-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  setNote("Histórico exportado.");
+});
+
+els.importBtn.addEventListener("click", () => {
+  if (busy) {
+    showToast("Aguarde o sorteio terminar para importar.", true);
+    return;
+  }
+  els.importInput.click();
+});
+
+els.importInput.addEventListener("change", async () => {
+  const file = els.importInput.files && els.importInput.files[0];
+  els.importInput.value = "";
+  if (!file) return;
+  if (!confirm("Importar substitui a rodada atual e todo o histórico. Continuar?")) return;
   try {
-    const s = await api("/api/state");
+    const s = store.importState(await file.text());
+    els.rangeMin.value = s.range.min;
+    els.rangeMax.value = s.range.max;
+    renderState(s);
+    setIdleNumber();
+    els.wheel.classList.remove("boiling");
+    els.numberLabel.textContent = "Pronto para sortear";
+    setNote("Histórico importado.");
+  } catch (err) {
+    showToast(err.message, true);
+  }
+});
+
+/* ---------------- sincronização entre abas ---------------- */
+window.addEventListener("storage", (e) => {
+  if (e.key !== null && e.key !== SorteioStore.STATE_KEY) return;
+  if (busy) return;
+  renderState(store.reload());
+});
+
+/* ---------------- boot ---------------- */
+(function boot() {
+  try {
+    const s = store.view();
     els.rangeMin.value = s.range.min;
     els.rangeMax.value = s.range.max;
     renderState(s);

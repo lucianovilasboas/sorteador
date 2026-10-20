@@ -2,17 +2,17 @@
 
 Sorteio por **comando de voz** (e por botão) que **não repete números**: você define um
 intervalo (ex.: 1 a 20), manda sortear falando, e o app **mostra o número gigante na tela**
-e **fala em voz alta** o resultado. Os números sorteados ficam gravados num arquivo JSON,
-cada rodada usa cada número apenas uma vez, e quando esgota você reinicia falando.
+e **fala em voz alta** o resultado. Cada rodada usa cada número apenas uma vez, e quando
+esgota você reinicia falando.
 
 ## Como funciona
 
 - **Voz para ouvir** (`reconhecer`): API de fala do navegador (Chrome/Edge) com `pt-BR`.
 - **Voz para falar** (`anunciar`): síntese de fala do navegador com voz `pt-BR`.
-- **Backend**: Node.js + Express. Estado central no servidor → várias telas/dispositivos
-  mostram o mesmo sorteio.
-- **Gravação**: arquivo `data/sorteios.json` (criado sozinho), com o intervalo e o
-  histórico completo por rodada.
+- **Single Page Application**: o app roda inteiro no navegador. **Não há backend de dados
+  nem API** — o servidor Node só entrega os arquivos estáticos.
+- **Gravação**: `localStorage` do navegador, chave `sorteador.state.v1` (intervalo, rodada
+  atual e as **20 últimas rodadas**). O sorteio funciona **offline**.
 
 ### Comandos de voz
 
@@ -63,7 +63,8 @@ docker compose up -d --build
 ```
 
 O container entra apenas na rede externa `proxy` (do Traefik); o proxy encaminha para a
-porta interna 3000. O banco/estado fica no volume `./data`. 
+porta interna 3000. O volume `./data` serve apenas para guardar os certificados
+auto-assinados do modo HTTPS — o estado dos sorteios **não** fica no servidor.
 
 ## Uso
 
@@ -72,34 +73,41 @@ porta interna 3000. O banco/estado fica no volume `./data`.
 3. Diga **“sortear”** e veja o globo girar e o número ser revelado e anunciado.
 4. Ao esgotar, diga **“reiniciar”** duas vezes (confirmação) para uma nova rodada.
 
+## Histórico: exportar e importar
+
+Como os dados moram no navegador, limpar os dados do site apaga o histórico. Em
+**⚙️ Intervalo de números** ficam os botões:
+
+- **⬇ Exportar** — baixa um `sorteios-AAAA-MM-DD.json` com o estado completo.
+- **⬆ Importar** — lê esse arquivo e substitui a rodada atual e o histórico.
+
+Use isso para backup, para levar o histórico para outra máquina ou para trocar de
+navegador.
+
 ## Detalhes técnicos
 
 - Intervalo válido: de 2 até 100.000 números.
-- Sorteio justo: cada draw escolhe uniformemente entre os números ainda não usados
-  (criptográfico, `crypto.randomInt`). Alternar de intervalo inicia uma nova rodada.
-- `data/sorteios.json`: quando a rodada termina (reset ou troca de intervalo), ela é
-  arquivada em `rounds` (até 500 rodadas). Quando roda via Docker, o arquivo é criado
-  como `root` (use `sudo` para editá-lo no host).
+- Sorteio justo: cada draw escolhe uniformemente entre os números ainda não usados, via
+  `crypto.getRandomValues` com rejeição de cauda (sem viés de módulo). Alternar de
+  intervalo inicia uma nova rodada.
+- `localStorage`: a rodada encerrada é arquivada (até **20 rodadas**). Se o estado passar
+  de ~4 MB, as rodadas mais antigas são descartadas; se o navegador recusar a gravação,
+  o app avisa em vez de perder o sorteio em silêncio.
+- Abrir o app em duas abas mantém as duas sincronizadas (evento `storage`).
+- Testes do domínio: `npm test` (Node ≥ 18, sem dependências).
 
-### API
-
-| Método | Rota | Descrição |
-| --- | --- | --- |
-| GET | `/api/state` | Estado atual (intervalo, restantes, histórico, rodadas) |
-| POST | `/api/config` `{min,max}` | Define intervalo e inicia nova rodada |
-| POST | `/api/draw` | Sorteia o próximo número (409 se esgotado) |
-| POST | `/api/reset` | Encerra a rodada atual e inicia nova |
-
-## Estrutura
+### Estrutura
 
 ```
 sorteador/
-├── server.js                 # Express: API + estática + persistência JSON
+├── server.js                 # Node/Express: serve public/ (+ HTTPS auto-assinado opcional)
 ├── public/                   # frontend (HTML/CSS/JS, sem dependências)
 │   ├── index.html
 │   ├── style.css
-│   └── app.js                # voz, animações, confetes
-├── data/                     # criado em runtime: sorteios.json (+ certs/ no modo HTTPS)
+│   ├── store.js              # domínio do sorteio + localStorage (sem DOM)
+│   └── app.js                # voz, animações, confetes, UI
+├── test/store.test.js        # testes do store (node:test)
+├── data/                     # runtime: apenas certs/ no modo HTTPS
 ├── Dockerfile
 ├── docker-compose.yml        # DEFINITIVO (servidor, atrás do Traefik)
 └── docker-compose.local.yml  # dev local (Docker, sem Traefik)
@@ -111,3 +119,8 @@ sorteador/
   navegadores) e conexão com a internet para o reconhecimento.
 - A síntese de fala pode usar a voz `pt-BR` disponível no sistema/Google; se não houver,
   o número ainda aparece grande na tela.
+- **O estado é por navegador e por origem.** Outro dispositivo, outro navegador ou outra
+  porta/domínio começam do zero; não há sorteio compartilhado entre telas. Para preservar
+  o histórico, use **Exportar**.
+- `localStorage` é isolado por origem: `http://localhost:3200` e
+  `https://sorteador.lucianovilasboas.com.br` são históricos diferentes.

@@ -53,6 +53,13 @@
             <button class="btn btn-ghost voice-test" id="voiceTest" type="button">▶ Ouvir</button>
           </div>
           <p class="voice-note" id="voiceNote" hidden></p>
+
+          <div class="data-row">
+            <span class="voice-label">💾 Histórico</span>
+            <button class="btn btn-ghost voice-test" id="exportBtn" type="button">⬇ Exportar</button>
+            <button class="btn btn-ghost voice-test" id="importBtn" type="button">⬆ Importar</button>
+            <input id="importInput" type="file" accept="application/json,.json" hidden />
+          </div>
         </div>
       </section>
 
@@ -137,6 +144,7 @@
   </div>
 
   <div class="toast" id="toast" hidden></div>
+  <script src="store.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
